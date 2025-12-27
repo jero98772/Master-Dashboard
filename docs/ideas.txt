@@ -10,10 +10,7 @@
   
 💾 Lives Available: ❤️  ❤️  ⚫  (2/3)
 
-📊 TODAY'S PROGRESS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Morning Study:  ⬛⬛⬛⬜  3/4 blocks
-  Exercise:       ⏱  Not Started (7PM reminder)
+
   
 ⏱️  WEEK TIME BREAKDOWN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -53,3 +50,78 @@ Wishes list / proyect and learning materials
 Focus points
 
 Yuri chat
+
+interface 
+
+Up menu
+progress bar for next level with points (each minute is a point) ,Hearts, privacy slide
+
+the interface must be a grid 3X4
+
+box 1 with
+STREAKS
+  Porn-Free(show when privacy off)   
+  routine 
+  code
+
+box 2 with
+TIME BREAKDOWN
+
+box 3 2X2
+chat 
+(hacker news,
+commands for rewards,
+list of proyects
+yuri photos)
+
+
+box 4 (under chat) 1X2
+waflle chart (every day when the user is active reward him for his activity)
+
+
+box 5 Pomodoro (micro rewards)
+Time
+button
+input
+progress bar to end as circle
+every min +1 Fp, every 5 mins +2 FP
+every 25 mins +5 fp
+
+
+box 6 Actual activty
+name 
+progress bar 
+(next activity in x mins)
+
+box 7 Momentum Multiplier
+
+3 activities completed without breaking = 1.5x FP multiplier for next task
+5 activities = 2x multiplier
+Combo breaks after 30min of inactivity
+
+box 8 Quick Wins Tracker
+
+"Drank water" (+1 FP)
+"Stretched/Moved" (+3 FP)
+"Logged progress" (+2 FP)
+"Helped someone" (+3 FP)
+
+
+rewards
+
+Earning Rate Reference:
+
+1 minute = 1 FP (base)
+5 minutes = 2 FP bonus = 7 FP total
+25 minutes (Pomodoro) = 5 FP bonus = 30 FP total
+Active day (waffle) = ~10-20 FP
+
+Spedables
+
+❤️(day) → 150 FP
+Skip a task -> 40 FP
+Yuri -> 70 FP
+
+Rules
+max 1 ❤️
+all task complete no broke heart
