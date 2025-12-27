@@ -75,5 +75,21 @@ const CONFIG = {
         stats: '/stats',
         yuri: '/yuri',
         news: '/news'
-    }
+    },
+
+    // Daily Schedule (24-hour format)
+    schedule: [
+        { start: '06:00', end: '06:30', task: 'Take a shower', category: 'other' },
+        { start: '06:30', end: '06:55', task: 'Do a course', category: 'learning' },
+        { start: '07:00', end: '07:25', task: 'Do a course', category: 'learning' },
+        { start: '07:30', end: '07:55', task: 'Do a course', category: 'learning' },
+        { start: '07:55', end: '09:00', task: 'Walk', category: 'exercise' },
+        { start: '09:00', end: '12:00', task: 'Work', category: 'work' },
+        { start: '13:00', end: '17:00', task: 'Work', category: 'work' },
+        { start: '19:00', end: '20:00', task: 'Hema', category: 'other' },
+        { start: '20:00', end: '21:00', task: 'Walk', category: 'exercise' },
+        { start: '21:00', end: '21:30', task: 'Take a bath', category: 'other' },
+        { start: '21:30', end: '22:00', task: 'Learn languages', category: 'learning' },
+        { start: '22:00', end: '06:00', task: 'Sleep', category: 'other' }
+    ]
 };

@@ -144,5 +144,17 @@ const API = {
             console.error('Error updating combo:', error);
             return null;
         }
+    },
+
+    // Get Hacker News stories
+    async getHackerNews() {
+        try {
+            const response = await fetch(`${this.baseURL}/api/hacker-news`);
+            if (!response.ok) throw new Error('Failed to fetch Hacker News');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching Hacker News:', error);
+            return null;
+        }
     }
 };

@@ -2,7 +2,7 @@ const { useState, useEffect, useRef } = React;
 
 // Chat Command Handler
 const useChatCommands = (state, setState, showNotificationMsg) => {
-    const processCommand = (command) => {
+    const processCommand = async (command) => {
         let response = { type: 'system', text: '' };
 
         if (command === CONFIG.chatCommands.help) {
@@ -17,7 +17,8 @@ const useChatCommands = (state, setState, showNotificationMsg) => {
                 response.text = `>> Insufficient FP. Need ${CONFIG.store.yuriPhoto} FP.`;
             }
         } else if (command === CONFIG.chatCommands.news) {
-            response.text = `>> Latest hacker news:\n• New productivity framework released\n• Pomodoro technique gains AI integration\n• Focus Point gamification trending`;
+            response.text = '>> Fetching latest Hacker News...';
+            response.fetchNews = true;
         } else {
             response.text = `>> Unknown command. Type ${CONFIG.chatCommands.help} for available commands.`;
         }
@@ -213,6 +214,7 @@ function App() {
     // Load data from backend on mount
     useEffect(() => {
         loadFromBackend();
+        loadHackerNews();
     }, []);
 
     const loadFromBackend = async () => {
@@ -235,6 +237,28 @@ function App() {
             }));
         } else {
             setState(prev => ({ ...prev, loading: false }));
+        }
+    };
+
+    const loadHackerNews = async () => {
+        const result = await API.getHackerNews();
+        if (result && result.success && result.stories) {
+            // Format stories for chat
+            let newsText = '>> 📰 Latest Hacker News:\n\n';
+            result.stories.slice(0, 8).forEach((story, i) => {
+                newsText += `${i + 1}. <b> ${story.title}</b>\n`;
+                newsText += `   ${story.url}\n\n`;
+            });
+
+            const newsMessage = {
+                type: 'system',
+                text: newsText
+            };
+
+            setState(prev => ({
+                ...prev,
+                chatMessages: [...prev.chatMessages, newsMessage]
+            }));
         }
     };
 
@@ -333,8 +357,9 @@ function App() {
         if (!chatInput.trim()) return;
 
         const newMessages = [...state.chatMessages, { type: 'user', text: `> ${chatInput}` }];
-        const response = processCommand(chatInput);
+        const response = await processCommand(chatInput);
         
+        // Handle /yuri purchase
         if (response.needsPurchase) {
             try {
                 const result = await API.purchaseItem('yuri', CONFIG.store.yuriPhoto);
@@ -347,6 +372,37 @@ function App() {
                 response.text = `>> ${error.message}`;
                 response.type = 'system';
             }
+        }
+
+        // Handle /news command
+        if (response.fetchNews) {
+            newMessages.push(response);
+            setState(prev => ({ ...prev, chatMessages: newMessages }));
+
+            // Fetch real news
+            const result = await API.getHackerNews();
+            if (result && result.success && result.stories) {
+                let newsText = '>> 📰 Latest Hacker News:\n\n';
+                result.stories.slice(0, 5).forEach((story, i) => {
+                    newsText += `${i + 1}. ${story.title}\n`;
+                    newsText += `   🔗 ${story.url}\n\n`;
+                });
+
+                const newsResponse = { type: 'system', text: newsText };
+                setState(prev => ({
+                    ...prev,
+                    chatMessages: [...prev.chatMessages, newsResponse]
+                }));
+            } else {
+                const errorResponse = { type: 'system', text: '>> Failed to fetch news. Try again later.' };
+                setState(prev => ({
+                    ...prev,
+                    chatMessages: [...prev.chatMessages, errorResponse]
+                }));
+            }
+
+            setChatInput('');
+            return;
         }
         
         newMessages.push(response);

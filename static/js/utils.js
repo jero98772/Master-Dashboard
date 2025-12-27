@@ -106,5 +106,67 @@ const Utils = {
         // You can add audio elements here
         // const audio = new Audio(`/static/sounds/${type}.mp3`);
         // audio.play();
+    },
+
+    // Get current scheduled task
+    getCurrentScheduledTask: () => {
+        const now = new Date();
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        
+        for (const item of CONFIG.schedule) {
+            if (Utils.isTimeBetween(currentTime, item.start, item.end)) {
+                return item;
+            }
+        }
+        return null;
+    },
+
+    // Get next scheduled task
+    getNextScheduledTask: () => {
+        const now = new Date();
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        
+        // Find next task
+        for (const item of CONFIG.schedule) {
+            if (currentTime < item.start) {
+                return item;
+            }
+        }
+        
+        // If no task found (past midnight), return first task of tomorrow
+        return CONFIG.schedule[0];
+    },
+
+    // Check if current time is between start and end
+    isTimeBetween: (current, start, end) => {
+        // Handle overnight times (like 22:00 to 06:00)
+        if (end < start) {
+            return current >= start || current < end;
+        }
+        return current >= start && current < end;
+    },
+
+    // Calculate time until next task
+    getTimeUntilTask: (taskTime) => {
+        const now = new Date();
+        const [hours, minutes] = taskTime.split(':').map(Number);
+        
+        const taskDate = new Date();
+        taskDate.setHours(hours, minutes, 0, 0);
+        
+        // If task time has passed today, it's tomorrow
+        if (taskDate < now) {
+            taskDate.setDate(taskDate.getDate() + 1);
+        }
+        
+        const diff = taskDate - now;
+        const diffMinutes = Math.floor(diff / 60000);
+        const diffHours = Math.floor(diffMinutes / 60);
+        const remainingMinutes = diffMinutes % 60;
+        
+        if (diffHours > 0) {
+            return `${diffHours}h ${remainingMinutes}m`;
+        }
+        return `${remainingMinutes}m`;
     }
 };
