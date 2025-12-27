@@ -1,23 +1,31 @@
 from flask import Flask, render_template, jsonify, request
 from datetime import datetime
+import json
+import os
 
 app = Flask(__name__)
 
-# In-memory data structure (you can replace this with a database)
-user_data = {
+# JSON file path
+DATA_FILE = 'user_data.json'
+
+# Default user data structure
+DEFAULT_USER_DATA = {
     'fp': 0,
     'minutes': 0,
     'hearts': 1,
     'privacy': False,
     'streaks': {
-        'porn': 1,
-        'routine': 2,
+        'porn': 0,
+        'routine': 0,
         'code': 0
     },
     'combo': 0,
     'multiplier': 1.0,
     'quickWins': [False, False, False, False],
+    'completedPomodoros': 0,
+    'cycleCount': 0,
     'timeData': {
+        'work': {'minutes': 0, 'percentage': 0},
         'coding': {'minutes': 0, 'percentage': 0},
         'learning': {'minutes': 0, 'percentage': 0},
         'exercise': {'minutes': 0, 'percentage': 0},
@@ -25,6 +33,37 @@ user_data = {
     },
     'last_updated': datetime.now().isoformat()
 }
+
+def load_user_data():
+    """Load user data from JSON file"""
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, 'r') as f:
+                data = json.load(f)
+                print(f"Loaded data from {DATA_FILE}")
+                return data
+        except json.JSONDecodeError:
+            print(f"Error reading {DATA_FILE}, using default data")
+            return DEFAULT_USER_DATA.copy()
+    else:
+        print(f"{DATA_FILE} not found, creating with default data")
+        save_user_data(DEFAULT_USER_DATA)
+        return DEFAULT_USER_DATA.copy()
+
+def save_user_data(data):
+    """Save user data to JSON file"""
+    data['last_updated'] = datetime.now().isoformat()
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        print(f"Data saved to {DATA_FILE}")
+        return True
+    except Exception as e:
+        print(f"Error saving data: {e}")
+        return False
+
+# Load initial data
+user_data = load_user_data()
 
 @app.route('/')
 def index():
@@ -39,14 +78,16 @@ def get_user_data():
 @app.route('/api/user-data', methods=['POST'])
 def update_user_data():
     """API endpoint to update user data"""
+    global user_data
     data = request.json
     user_data.update(data)
-    user_data['last_updated'] = datetime.now().isoformat()
+    save_user_data(user_data)
     return jsonify({'success': True, 'data': user_data})
 
 @app.route('/api/save-progress', methods=['POST'])
 def save_progress():
     """Save user progress (FP, streaks, etc.)"""
+    global user_data
     data = request.json
     
     # Update user data
@@ -68,8 +109,12 @@ def save_progress():
         user_data['privacy'] = data['privacy']
     if 'timeData' in data:
         user_data['timeData'] = data['timeData']
+    if 'completedPomodoros' in data:
+        user_data['completedPomodoros'] = data['completedPomodoros']
+    if 'cycleCount' in data:
+        user_data['cycleCount'] = data['cycleCount']
     
-    user_data['last_updated'] = datetime.now().isoformat()
+    save_user_data(user_data)
     
     return jsonify({
         'success': True,
@@ -80,12 +125,13 @@ def save_progress():
 @app.route('/api/add-fp', methods=['POST'])
 def add_fp():
     """Add FP to user account"""
+    global user_data
     data = request.json
     amount = data.get('amount', 0)
     source = data.get('source', 'unknown')
     
     user_data['fp'] += amount
-    user_data['last_updated'] = datetime.now().isoformat()
+    save_user_data(user_data)
     
     return jsonify({
         'success': True,
@@ -96,6 +142,7 @@ def add_fp():
 @app.route('/api/purchase', methods=['POST'])
 def purchase_item():
     """Handle FP store purchases"""
+    global user_data
     data = request.json
     item_type = data.get('type')
     cost = data.get('cost')
@@ -119,7 +166,7 @@ def purchase_item():
         # Photo purchase (handled in frontend)
         pass
     
-    user_data['last_updated'] = datetime.now().isoformat()
+    save_user_data(user_data)
     
     return jsonify({
         'success': True,
@@ -130,12 +177,13 @@ def purchase_item():
 @app.route('/api/increment-streak', methods=['POST'])
 def increment_streak():
     """Increment a streak counter"""
+    global user_data
     data = request.json
     streak_type = data.get('type')  # 'porn', 'routine', or 'code'
     
     if streak_type in user_data['streaks']:
         user_data['streaks'][streak_type] += 1
-        user_data['last_updated'] = datetime.now().isoformat()
+        save_user_data(user_data)
     
     return jsonify({
         'success': True,
@@ -145,6 +193,7 @@ def increment_streak():
 @app.route('/api/quick-win', methods=['POST'])
 def complete_quick_win():
     """Complete a quick win task"""
+    global user_data
     data = request.json
     index = data.get('index')
     fp = data.get('fp')
@@ -163,7 +212,7 @@ def complete_quick_win():
         else:
             user_data['multiplier'] = 1.0
         
-        user_data['last_updated'] = datetime.now().isoformat()
+        save_user_data(user_data)
         
         return jsonify({
             'success': True,
@@ -179,11 +228,12 @@ def complete_quick_win():
 @app.route('/api/update-combo', methods=['POST'])
 def update_combo():
     """Update combo and multiplier"""
+    global user_data
     data = request.json
     
     user_data['combo'] = data.get('combo', 0)
     user_data['multiplier'] = data.get('multiplier', 1.0)
-    user_data['last_updated'] = datetime.now().isoformat()
+    save_user_data(user_data)
     
     return jsonify({
         'success': True,
@@ -193,8 +243,9 @@ def update_combo():
 @app.route('/api/reset-quick-wins', methods=['POST'])
 def reset_quick_wins():
     """Reset quick wins (call daily)"""
+    global user_data
     user_data['quickWins'] = [False, False, False, False]
-    user_data['last_updated'] = datetime.now().isoformat()
+    save_user_data(user_data)
     
     return jsonify({
         'success': True,
@@ -202,5 +253,49 @@ def reset_quick_wins():
         'data': user_data
     })
 
+@app.route('/api/export', methods=['GET'])
+def export_data():
+    """Export user data as JSON"""
+    return jsonify({
+        'success': True,
+        'data': user_data,
+        'exported_at': datetime.now().isoformat()
+    })
+
+@app.route('/api/import', methods=['POST'])
+def import_data():
+    """Import user data from JSON"""
+    global user_data
+    data = request.json
+    
+    if 'data' in data:
+        user_data = data['data']
+        save_user_data(user_data)
+        return jsonify({
+            'success': True,
+            'message': 'Data imported successfully',
+            'data': user_data
+        })
+    
+    return jsonify({
+        'success': False,
+        'message': 'Invalid import data'
+    }), 400
+
+@app.route('/api/reset-all', methods=['POST'])
+def reset_all():
+    """Reset all data to default (use with caution!)"""
+    global user_data
+    user_data = DEFAULT_USER_DATA.copy()
+    save_user_data(user_data)
+    
+    return jsonify({
+        'success': True,
+        'message': 'All data reset to default',
+        'data': user_data
+    })
+
 if __name__ == '__main__':
+    print(f"Starting FocusPoint Tracker")
+    print(f"Data will be saved to: {os.path.abspath(DATA_FILE)}")
     app.run(debug=True)

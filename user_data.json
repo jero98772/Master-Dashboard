@@ -1,0 +1,44 @@
+{
+  "fp": 148,
+  "minutes": 42,
+  "hearts": 1,
+  "privacy": false,
+  "streaks": {
+    "porn": 0,
+    "routine": 0,
+    "code": 0
+  },
+  "combo": 8,
+  "multiplier": 2,
+  "quickWins": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "timeData": {
+    "coding": {
+      "minutes": 0,
+      "percentage": 0
+    },
+    "exercise": {
+      "minutes": 0,
+      "percentage": 0
+    },
+    "learning": {
+      "minutes": 0,
+      "percentage": 0
+    },
+    "other": {
+      "minutes": 0,
+      "percentage": 0
+    },
+    "work": {
+      "minutes": 4,
+      "percentage": 100
+    }
+  },
+  "last_updated": "2025-12-27T14:54:31.690947",
+  "completedPomodoros": 4,
+  "cycleCount": 4
+}

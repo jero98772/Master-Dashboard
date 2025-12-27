@@ -8,7 +8,7 @@ const useChatCommands = (state, setState, showNotificationMsg) => {
         if (command === CONFIG.chatCommands.help) {
             response.text = `>> Available commands:\n${CONFIG.chatCommands.help} - Show commands\n${CONFIG.chatCommands.stats} - Show your stats\n${CONFIG.chatCommands.yuri} - Random Yuri photo (costs ${CONFIG.store.yuriPhoto} FP)\n${CONFIG.chatCommands.news} - Hacker news feed`;
         } else if (command === CONFIG.chatCommands.stats) {
-            response.text = `>> STATS:\nFP: ${state.fp}\nCombo: ${state.combo}x\nMultiplier: ${state.multiplier.toFixed(1)}x\nHearts: ${state.hearts}`;
+            response.text = `>> STATS:\nFP: ${state.fp}\nCombo: ${state.combo}x\nMultiplier: ${state.multiplier.toFixed(1)}x\nHearts: ${state.hearts}\nPomodoros: ${state.completedPomodoros}`;
         } else if (command === CONFIG.chatCommands.yuri) {
             if (state.fp >= CONFIG.store.yuriPhoto) {
                 response.needsPurchase = true;
@@ -28,49 +28,98 @@ const useChatCommands = (state, setState, showNotificationMsg) => {
     return { processCommand };
 };
 
-// Timer Hook
+// Enhanced Timer Hook with Pomodoro Cycles
 const useTimer = (state, setState, addFP, showNotificationMsg, syncToBackend) => {
     const timerInterval = useRef(null);
 
-    const startTimer = (taskName) => {
+    const startTimer = (taskName, category) => {
         if (state.timerRunning) return;
 
         setState(prev => ({
             ...prev,
             timerRunning: true,
-            currentTask: taskName || 'Focus Session'
+            currentTask: taskName || 'Focus Session',
+            currentCategory: category || prev.currentCategory
         }));
 
         let elapsed = 0;
+        const isBreak = state.isBreak;
+        const duration = isBreak 
+            ? (state.cycleCount === 4 ? CONFIG.pomodoro.longBreakDuration : CONFIG.pomodoro.breakDuration)
+            : CONFIG.pomodoro.defaultDuration;
 
         timerInterval.current = setInterval(() => {
             setState(prev => {
                 const newTimeRemaining = prev.timeRemaining - 1;
                 elapsed++;
 
-                // Reward system
-                if (elapsed % 60 === 0) {
+                // During work session, reward every minute
+                if (!isBreak && elapsed % 60 === 0) {
                     addFP(CONFIG.rewards.perMinute, 'pomodoro_minute');
                 }
-                if (elapsed % 300 === 0) {
+                if (!isBreak && elapsed % 300 === 0) {
                     addFP(CONFIG.rewards.per5Minutes, 'pomodoro_5min');
                 }
-                if (elapsed === CONFIG.pomodoro.defaultDuration * 60) {
-                    addFP(CONFIG.rewards.per25Minutes, 'pomodoro_complete');
-                    showNotificationMsg(`🎉 Pomodoro Complete! +${CONFIG.rewards.per25Minutes} FP Bonus!`);
-                    resetTimer();
+
+                // Timer completed
+                if (newTimeRemaining <= 0) {
+                    clearInterval(timerInterval.current);
                     
-                    const newCombo = prev.combo + 1;
-                    const newMultiplier = Utils.calculateMultiplier(newCombo);
-                    
-                    // Sync combo to backend
-                    API.updateCombo(newCombo, newMultiplier);
-                    
-                    return {
-                        ...prev,
-                        combo: newCombo,
-                        multiplier: newMultiplier
-                    };
+                    if (!isBreak) {
+                        // Work session completed
+                        addFP(CONFIG.rewards.per25Minutes, 'pomodoro_complete');
+                        showNotificationMsg(`🎉 Pomodoro Complete! +${CONFIG.rewards.per25Minutes} FP Bonus!`);
+                        
+                        // Update time breakdown
+                        const newTimeData = Utils.updateTimeBreakdown(
+                            prev.timeData, 
+                            prev.currentCategory, 
+                            CONFIG.pomodoro.defaultDuration
+                        );
+                        
+                        const newCycleCount = prev.cycleCount + 1;
+                        const newCombo = prev.combo + 1;
+                        const newMultiplier = Utils.calculateMultiplier(newCombo);
+                        const newCompletedPomodoros = prev.completedPomodoros + 1;
+                        
+                        // Sync ALL data to backend immediately
+                        API.saveProgress({ 
+                            timeData: newTimeData,
+                            combo: newCombo,
+                            multiplier: newMultiplier,
+                            completedPomodoros: newCompletedPomodoros,
+                            cycleCount: newCycleCount > 4 ? 1 : newCycleCount
+                        });
+                        
+                        // Determine next break duration
+                        const nextBreakDuration = newCycleCount === 4 
+                            ? CONFIG.pomodoro.longBreakDuration 
+                            : CONFIG.pomodoro.breakDuration;
+                        
+                        return {
+                            ...prev,
+                            timerRunning: false,
+                            isBreak: true,
+                            cycleCount: newCycleCount > 4 ? 1 : newCycleCount,
+                            timeRemaining: nextBreakDuration * 60,
+                            combo: newCombo,
+                            multiplier: newMultiplier,
+                            completedPomodoros: newCompletedPomodoros,
+                            timeData: newTimeData,
+                            currentTask: newCycleCount === 4 ? 'Long Break' : 'Short Break'
+                        };
+                    } else {
+                        // Break completed
+                        showNotificationMsg('✅ Break over! Time to focus!');
+                        
+                        return {
+                            ...prev,
+                            timerRunning: false,
+                            isBreak: false,
+                            timeRemaining: CONFIG.pomodoro.defaultDuration * 60,
+                            currentTask: 'Ready to work'
+                        };
+                    }
                 }
 
                 return {
@@ -87,16 +136,39 @@ const useTimer = (state, setState, addFP, showNotificationMsg, syncToBackend) =>
         setState(prev => ({
             ...prev,
             timerRunning: false,
+            isBreak: false,
+            cycleCount: 0,
             timeRemaining: CONFIG.pomodoro.defaultDuration * 60,
             currentTask: 'No active task'
         }));
+    };
+
+    const pauseTimer = () => {
+        clearInterval(timerInterval.current);
+        setState(prev => ({
+            ...prev,
+            timerRunning: false,
+            currentTask: prev.isBreak ? 'Break paused' : `${prev.currentTask} (paused)`
+        }));
+    };
+
+    const skipBreak = () => {
+        clearInterval(timerInterval.current);
+        setState(prev => ({
+            ...prev,
+            timerRunning: false,
+            isBreak: false,
+            timeRemaining: CONFIG.pomodoro.defaultDuration * 60,
+            currentTask: 'Ready to work'
+        }));
+        showNotificationMsg('⏭️ Break skipped!');
     };
 
     useEffect(() => {
         return () => clearInterval(timerInterval.current);
     }, []);
 
-    return { startTimer, resetTimer };
+    return { startTimer, resetTimer, pauseTimer, skipBreak };
 };
 
 // Main App Component
@@ -112,13 +184,18 @@ function App() {
         multiplier: 1.0,
         quickWins: [false, false, false, false],
         timerRunning: false,
+        isBreak: false,
+        cycleCount: 0,
         timeRemaining: CONFIG.pomodoro.defaultDuration * 60,
         lastActivity: Date.now(),
         currentTask: 'No active task',
+        currentCategory: 'work',
+        completedPomodoros: 0,
         chatMessages: [
             { type: 'system', text: '>> System initialized. Type /help for commands.' }
         ],
         timeData: {
+            work: { minutes: 0, percentage: 0 },
             coding: { minutes: 0, percentage: 0 },
             learning: { minutes: 0, percentage: 0 },
             exercise: { minutes: 0, percentage: 0 },
@@ -131,6 +208,7 @@ function App() {
     const [notification, setNotification] = useState({ show: false, text: '' });
     const [chatInput, setChatInput] = useState('');
     const [taskInput, setTaskInput] = useState('');
+    const [categoryInput, setCategoryInput] = useState('work');
 
     // Load data from backend on mount
     useEffect(() => {
@@ -151,6 +229,8 @@ function App() {
                 multiplier: data.multiplier || 1.0,
                 quickWins: data.quickWins || [false, false, false, false],
                 timeData: data.timeData || prev.timeData,
+                completedPomodoros: data.completedPomodoros || 0,
+                cycleCount: data.cycleCount || 0,
                 loading: false
             }));
         } else {
@@ -164,7 +244,7 @@ function App() {
 
         const syncInterval = setInterval(() => {
             syncToBackend();
-        }, 30000); // Sync every 30 seconds
+        }, 30000);
 
         return () => clearInterval(syncInterval);
     }, [state]);
@@ -179,7 +259,9 @@ function App() {
             combo: state.combo,
             multiplier: state.multiplier,
             quickWins: state.quickWins,
-            timeData: state.timeData
+            timeData: state.timeData,
+            completedPomodoros: state.completedPomodoros,
+            cycleCount: state.cycleCount
         };
 
         await API.saveProgress(dataToSync);
@@ -205,7 +287,6 @@ function App() {
     const addFP = async (amount, source = 'manual') => {
         const earned = Math.floor(amount * state.multiplier);
         
-        // Update local state immediately
         setState(prev => ({
             ...prev,
             fp: prev.fp + earned,
@@ -213,25 +294,28 @@ function App() {
             lastActivity: Date.now()
         }));
         
-        // Sync to backend
         await API.addFP(earned, source);
-        
         Utils.showNotification(`+${earned} FP earned!`, setNotification);
     };
 
     // Custom hooks
     const { processCommand } = useChatCommands(state, setState, (msg) => Utils.showNotification(msg, setNotification));
-    const { startTimer, resetTimer } = useTimer(state, setState, addFP, (msg) => Utils.showNotification(msg, setNotification), syncToBackend);
+    const { startTimer, resetTimer, pauseTimer, skipBreak } = useTimer(state, setState, addFP, (msg) => Utils.showNotification(msg, setNotification), syncToBackend);
+
+    // Auto-detect category from task name
+    const handleTaskInputChange = (value) => {
+        setTaskInput(value);
+        const detectedCategory = Utils.detectCategory(value);
+        setCategoryInput(detectedCategory);
+    };
 
     // Quick wins
     const completeQuickWin = async (index, fp) => {
         if (state.quickWins[index]) return;
 
-        // Call backend to complete quick win
         const result = await API.completeQuickWin(index, fp);
         
         if (result && result.success) {
-            // Update local state with backend data
             setState(prev => ({
                 ...prev,
                 quickWins: result.data.quickWins,
@@ -251,17 +335,13 @@ function App() {
         const newMessages = [...state.chatMessages, { type: 'user', text: `> ${chatInput}` }];
         const response = processCommand(chatInput);
         
-        // Handle /yuri purchase
         if (response.needsPurchase) {
             try {
                 const result = await API.purchaseItem('yuri', CONFIG.store.yuriPhoto);
                 if (result.success) {
                     response.text = `>> Photo unlocked! 📸`;
                     response.image = `https://picsum.photos/300/400?random=${Math.random()}`;
-                    setState(prev => ({ 
-                        ...prev, 
-                        fp: result.data.fp 
-                    }));
+                    setState(prev => ({ ...prev, fp: result.data.fp }));
                 }
             } catch (error) {
                 response.text = `>> ${error.message}`;
@@ -270,12 +350,7 @@ function App() {
         }
         
         newMessages.push(response);
-
-        setState(prev => ({
-            ...prev,
-            chatMessages: newMessages
-        }));
-
+        setState(prev => ({ ...prev, chatMessages: newMessages }));
         setChatInput('');
     };
 
@@ -285,7 +360,6 @@ function App() {
             const result = await API.purchaseItem(type, cost);
             
             if (result.success) {
-                // Update local state with backend data
                 setState(prev => ({
                     ...prev,
                     fp: result.data.fp,
@@ -316,16 +390,16 @@ function App() {
         }
     };
 
-    // Privacy toggle with backend sync
     const togglePrivacy = () => {
         const newPrivacy = !state.privacy;
         setState(prev => ({ ...prev, privacy: newPrivacy }));
         API.saveProgress({ privacy: newPrivacy });
     };
 
-    // Calculate activity progress
     const activityProgress = state.timerRunning 
-        ? ((CONFIG.pomodoro.defaultDuration * 60 - state.timeRemaining) / (CONFIG.pomodoro.defaultDuration * 60) * 100) 
+        ? (state.isBreak
+            ? ((state.cycleCount === 4 ? CONFIG.pomodoro.longBreakDuration : CONFIG.pomodoro.breakDuration) * 60 - state.timeRemaining) / ((state.cycleCount === 4 ? CONFIG.pomodoro.longBreakDuration : CONFIG.pomodoro.breakDuration) * 60) * 100
+            : ((CONFIG.pomodoro.defaultDuration * 60 - state.timeRemaining) / (CONFIG.pomodoro.defaultDuration * 60) * 100))
         : 0;
 
     if (state.loading) {
@@ -367,17 +441,26 @@ function App() {
                 <PomodoroTimer 
                     timeRemaining={state.timeRemaining}
                     isRunning={state.timerRunning}
+                    isBreak={state.isBreak}
+                    cycleCount={state.cycleCount}
                     taskInput={taskInput}
-                    onTaskInputChange={setTaskInput}
-                    onStart={() => startTimer(taskInput)}
+                    category={categoryInput}
+                    onTaskInputChange={handleTaskInputChange}
+                    onCategoryChange={setCategoryInput}
+                    onStart={() => startTimer(taskInput, categoryInput)}
+                    onPause={pauseTimer}
                     onReset={resetTimer}
+                    onSkipBreak={skipBreak}
                 />
                 
                 <CurrentActivity 
                     taskName={state.currentTask}
+                    category={state.currentCategory}
                     progress={activityProgress}
                     timeRemaining={state.timeRemaining}
                     isRunning={state.timerRunning}
+                    isBreak={state.isBreak}
+                    cycleCount={state.cycleCount}
                 />
                 
                 <MomentumMultiplier 
@@ -405,6 +488,5 @@ function App() {
     );
 }
 
-// Render the app
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);

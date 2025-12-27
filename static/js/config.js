@@ -10,8 +10,10 @@ const CONFIG = {
 
     // Pomodoro Settings
     pomodoro: {
-        defaultDuration: 25,    // Minutes
-        breakDuration: 5        // Minutes
+        defaultDuration: 25,    // Work session minutes
+        breakDuration: 5,       // Short break minutes
+        longBreakDuration: 15,  // Long break minutes (after 4th pomodoro)
+        cyclesBeforeLongBreak: 4 // Number of pomodoros before long break
     },
 
     // Multiplier System
@@ -51,11 +53,21 @@ const CONFIG = {
 
     // Time Breakdown Categories
     timeCategories: [
-        'Coding',
-        'Learning',
-        'Exercise',
-        'Other'
+        'Work 💼',
+        'Coding 💻',
+        'Learning 📚',
+        'Exercise 🏃',
+        'Other 📝'
     ],
+
+    // Category Keywords (for auto-categorization)
+    categoryKeywords: {
+        work: ['work', 'meeting', 'call', 'email', 'task', 'project', 'planning', 'admin'],
+        coding: ['code', 'coding', 'programming', 'debug', 'develop', 'script', 'app', 'website', 'software', 'python', 'javascript', 'react', 'css', 'html'],
+        learning: ['learn', 'study', 'read', 'course', 'tutorial', 'book', 'research', 'documentation', 'docs'],
+        exercise: ['exercise', 'workout', 'gym', 'run', 'walk', 'yoga', 'fitness', 'sport'],
+        other: []
+    },
 
     // Chat Commands
     chatCommands: {

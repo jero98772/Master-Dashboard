@@ -30,6 +30,50 @@ const Utils = {
         return (minutes % CONFIG.level.pointsPerLevel) / CONFIG.level.pointsPerLevel * 100;
     },
 
+    // Detect category from task name
+    detectCategory: (taskName) => {
+        if (!taskName) return 'other';
+        
+        const lowerTask = taskName.toLowerCase();
+        
+        // Check each category's keywords
+        for (const [key, keywords] of Object.entries(CONFIG.categoryKeywords)) {
+            if (key === 'other') continue;
+            
+            for (const keyword of keywords) {
+                if (lowerTask.includes(keyword)) {
+                    return key;
+                }
+            }
+        }
+        
+        return 'other';
+    },
+
+    // Update time breakdown data
+    updateTimeBreakdown: (timeData, category, minutes) => {
+        const newTimeData = { ...timeData };
+        
+        // Add minutes to the category
+        if (newTimeData[category]) {
+            newTimeData[category].minutes += minutes;
+        } else {
+            newTimeData[category] = { minutes: minutes, percentage: 0 };
+        }
+        
+        // Calculate total minutes
+        const totalMinutes = Object.values(newTimeData).reduce((sum, cat) => sum + cat.minutes, 0);
+        
+        // Calculate percentages
+        if (totalMinutes > 0) {
+            for (const cat in newTimeData) {
+                newTimeData[cat].percentage = Math.round((newTimeData[cat].minutes / totalMinutes) * 100);
+            }
+        }
+        
+        return newTimeData;
+    },
+
     // Save state to localStorage
     saveState: (state) => {
         const { chatMessages, ...stateToSave } = state;
@@ -55,5 +99,12 @@ const Utils = {
         const inactiveTime = Date.now() - lastActivity;
         const timeoutMs = CONFIG.multiplier.inactivityTimeout * 60 * 1000;
         return inactiveTime > timeoutMs;
+    },
+
+    // Play notification sound (optional)
+    playSound: (type) => {
+        // You can add audio elements here
+        // const audio = new Audio(`/static/sounds/${type}.mp3`);
+        // audio.play();
     }
 };
