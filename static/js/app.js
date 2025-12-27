@@ -1,101 +1,44 @@
 const { useState, useEffect, useRef } = React;
 
-// Main App Component
-function App() {
-    // State management
-    const [state, setState] = useState({
-        fp: 0,
-        minutes: 0,
-        hearts: 1,
-        privacy: false,
-        streaks: { porn: 0, routine: 0, code: 0 },
-        combo: 0,
-        multiplier: 1.0,
-        quickWins: [false, false, false, false],
-        timerRunning: false,
-        timeRemaining: 25 * 60,
-        lastActivity: Date.now(),
-        currentTask: 'No active task',
-        chatMessages: [
-            { type: 'system', text: '>> System initialized. Type /help for commands.' }
-        ]
-    });
+// Chat Command Handler
+const useChatCommands = (state, setState, showNotificationMsg) => {
+    const processCommand = (command) => {
+        let response = { type: 'system', text: '' };
 
-    const [showStore, setShowStore] = useState(false);
-    const [notification, setNotification] = useState({ show: false, text: '' });
-    const [chatInput, setChatInput] = useState('');
-    const [taskInput, setTaskInput] = useState('');
-    const timerInterval = useRef(null);
-    const comboCheckInterval = useRef(null);
-
-    // Load state from localStorage on mount
-    useEffect(() => {
-        const savedState = localStorage.getItem('focusPointState');
-        if (savedState) {
-            const loaded = JSON.parse(savedState);
-            setState(prev => ({ ...prev, ...loaded, chatMessages: prev.chatMessages }));
-        }
-    }, []);
-
-    // Auto-save state
-    useEffect(() => {
-        const saveInterval = setInterval(() => {
-            const { chatMessages, ...stateToSave } = state;
-            localStorage.setItem('focusPointState', JSON.stringify(stateToSave));
-        }, 30000);
-
-        return () => clearInterval(saveInterval);
-    }, [state]);
-
-    // Check combo inactivity
-    useEffect(() => {
-        comboCheckInterval.current = setInterval(() => {
-            const inactiveTime = Date.now() - state.lastActivity;
-            if (inactiveTime > 30 * 60 * 1000 && state.combo > 0) {
-                setState(prev => ({
-                    ...prev,
-                    combo: 0,
-                    multiplier: 1.0
-                }));
+        if (command === CONFIG.chatCommands.help) {
+            response.text = `>> Available commands:\n${CONFIG.chatCommands.help} - Show commands\n${CONFIG.chatCommands.stats} - Show your stats\n${CONFIG.chatCommands.yuri} - Random Yuri photo (costs ${CONFIG.store.yuriPhoto} FP)\n${CONFIG.chatCommands.news} - Hacker news feed`;
+        } else if (command === CONFIG.chatCommands.stats) {
+            response.text = `>> STATS:\nFP: ${state.fp}\nCombo: ${state.combo}x\nMultiplier: ${state.multiplier.toFixed(1)}x\nHearts: ${state.hearts}`;
+        } else if (command === CONFIG.chatCommands.yuri) {
+            if (state.fp >= CONFIG.store.yuriPhoto) {
+                response.needsPurchase = true;
+                response.type = 'reward';
+            } else {
+                response.text = `>> Insufficient FP. Need ${CONFIG.store.yuriPhoto} FP.`;
             }
-        }, 60000);
-
-        return () => clearInterval(comboCheckInterval.current);
-    }, [state.lastActivity, state.combo]);
-
-    // Add FP with multiplier
-    const addFP = (amount) => {
-        const earned = Math.floor(amount * state.multiplier);
-        setState(prev => ({
-            ...prev,
-            fp: prev.fp + earned,
-            minutes: prev.minutes + amount,
-            lastActivity: Date.now()
-        }));
-        showNotificationMsg(`+${earned} FP earned!`);
-    };
-
-    // Update multiplier based on combo
-    const updateMultiplier = (newCombo) => {
-        let multiplier = 1.0;
-        if (newCombo >= 5) {
-            multiplier = 2.0;
-        } else if (newCombo >= 3) {
-            multiplier = 1.5;
+        } else if (command === CONFIG.chatCommands.news) {
+            response.text = `>> Latest hacker news:\n• New productivity framework released\n• Pomodoro technique gains AI integration\n• Focus Point gamification trending`;
+        } else {
+            response.text = `>> Unknown command. Type ${CONFIG.chatCommands.help} for available commands.`;
         }
-        return multiplier;
+
+        return response;
     };
 
-    // Timer functions
-    const startTimer = () => {
+    return { processCommand };
+};
+
+// Timer Hook
+const useTimer = (state, setState, addFP, showNotificationMsg, syncToBackend) => {
+    const timerInterval = useRef(null);
+
+    const startTimer = (taskName) => {
         if (state.timerRunning) return;
 
-        const taskName = taskInput || 'Focus Session';
-        
         setState(prev => ({
             ...prev,
             timerRunning: true,
-            currentTask: taskName
+            currentTask: taskName || 'Focus Session'
         }));
 
         let elapsed = 0;
@@ -107,20 +50,26 @@ function App() {
 
                 // Reward system
                 if (elapsed % 60 === 0) {
-                    addFP(1); // Every minute
+                    addFP(CONFIG.rewards.perMinute, 'pomodoro_minute');
                 }
                 if (elapsed % 300 === 0) {
-                    addFP(2); // Every 5 minutes
+                    addFP(CONFIG.rewards.per5Minutes, 'pomodoro_5min');
                 }
-                if (elapsed === 1500) {
-                    addFP(5); // 25 minutes
-                    showNotificationMsg('🎉 Pomodoro Complete! +5 FP Bonus!');
+                if (elapsed === CONFIG.pomodoro.defaultDuration * 60) {
+                    addFP(CONFIG.rewards.per25Minutes, 'pomodoro_complete');
+                    showNotificationMsg(`🎉 Pomodoro Complete! +${CONFIG.rewards.per25Minutes} FP Bonus!`);
                     resetTimer();
+                    
                     const newCombo = prev.combo + 1;
+                    const newMultiplier = Utils.calculateMultiplier(newCombo);
+                    
+                    // Sync combo to backend
+                    API.updateCombo(newCombo, newMultiplier);
+                    
                     return {
                         ...prev,
                         combo: newCombo,
-                        multiplier: updateMultiplier(newCombo)
+                        multiplier: newMultiplier
                     };
                 }
 
@@ -138,56 +87,188 @@ function App() {
         setState(prev => ({
             ...prev,
             timerRunning: false,
-            timeRemaining: 25 * 60,
+            timeRemaining: CONFIG.pomodoro.defaultDuration * 60,
             currentTask: 'No active task'
         }));
     };
 
-    // Quick wins
-    const completeQuickWin = (index, fp) => {
-        if (state.quickWins[index]) return;
+    useEffect(() => {
+        return () => clearInterval(timerInterval.current);
+    }, []);
 
-        const newQuickWins = [...state.quickWins];
-        newQuickWins[index] = true;
-        const newCombo = state.combo + 1;
+    return { startTimer, resetTimer };
+};
 
+// Main App Component
+function App() {
+    // Initial state
+    const [state, setState] = useState({
+        fp: 0,
+        minutes: 0,
+        hearts: CONFIG.hearts.startingHearts,
+        privacy: false,
+        streaks: { porn: 0, routine: 0, code: 0 },
+        combo: 0,
+        multiplier: 1.0,
+        quickWins: [false, false, false, false],
+        timerRunning: false,
+        timeRemaining: CONFIG.pomodoro.defaultDuration * 60,
+        lastActivity: Date.now(),
+        currentTask: 'No active task',
+        chatMessages: [
+            { type: 'system', text: '>> System initialized. Type /help for commands.' }
+        ],
+        timeData: {
+            coding: { minutes: 0, percentage: 0 },
+            learning: { minutes: 0, percentage: 0 },
+            exercise: { minutes: 0, percentage: 0 },
+            other: { minutes: 0, percentage: 0 }
+        },
+        loading: true
+    });
+
+    const [showStore, setShowStore] = useState(false);
+    const [notification, setNotification] = useState({ show: false, text: '' });
+    const [chatInput, setChatInput] = useState('');
+    const [taskInput, setTaskInput] = useState('');
+
+    // Load data from backend on mount
+    useEffect(() => {
+        loadFromBackend();
+    }, []);
+
+    const loadFromBackend = async () => {
+        const data = await API.getUserData();
+        if (data) {
+            setState(prev => ({
+                ...prev,
+                fp: data.fp || 0,
+                minutes: data.minutes || 0,
+                hearts: data.hearts || CONFIG.hearts.startingHearts,
+                privacy: data.privacy || false,
+                streaks: data.streaks || { porn: 0, routine: 0, code: 0 },
+                combo: data.combo || 0,
+                multiplier: data.multiplier || 1.0,
+                quickWins: data.quickWins || [false, false, false, false],
+                timeData: data.timeData || prev.timeData,
+                loading: false
+            }));
+        } else {
+            setState(prev => ({ ...prev, loading: false }));
+        }
+    };
+
+    // Sync state to backend periodically
+    useEffect(() => {
+        if (state.loading) return;
+
+        const syncInterval = setInterval(() => {
+            syncToBackend();
+        }, 30000); // Sync every 30 seconds
+
+        return () => clearInterval(syncInterval);
+    }, [state]);
+
+    const syncToBackend = async () => {
+        const dataToSync = {
+            fp: state.fp,
+            minutes: state.minutes,
+            hearts: state.hearts,
+            privacy: state.privacy,
+            streaks: state.streaks,
+            combo: state.combo,
+            multiplier: state.multiplier,
+            quickWins: state.quickWins,
+            timeData: state.timeData
+        };
+
+        await API.saveProgress(dataToSync);
+    };
+
+    // Check combo inactivity
+    useEffect(() => {
+        const comboCheckInterval = setInterval(() => {
+            if (Utils.shouldBreakCombo(state.lastActivity) && state.combo > 0) {
+                setState(prev => ({
+                    ...prev,
+                    combo: 0,
+                    multiplier: 1.0
+                }));
+                API.updateCombo(0, 1.0);
+            }
+        }, 60000);
+
+        return () => clearInterval(comboCheckInterval);
+    }, [state.lastActivity, state.combo]);
+
+    // Add FP with multiplier and sync to backend
+    const addFP = async (amount, source = 'manual') => {
+        const earned = Math.floor(amount * state.multiplier);
+        
+        // Update local state immediately
         setState(prev => ({
             ...prev,
-            quickWins: newQuickWins,
-            combo: newCombo,
-            multiplier: updateMultiplier(newCombo)
+            fp: prev.fp + earned,
+            minutes: prev.minutes + amount,
+            lastActivity: Date.now()
         }));
+        
+        // Sync to backend
+        await API.addFP(earned, source);
+        
+        Utils.showNotification(`+${earned} FP earned!`, setNotification);
+    };
 
-        addFP(fp);
+    // Custom hooks
+    const { processCommand } = useChatCommands(state, setState, (msg) => Utils.showNotification(msg, setNotification));
+    const { startTimer, resetTimer } = useTimer(state, setState, addFP, (msg) => Utils.showNotification(msg, setNotification), syncToBackend);
+
+    // Quick wins
+    const completeQuickWin = async (index, fp) => {
+        if (state.quickWins[index]) return;
+
+        // Call backend to complete quick win
+        const result = await API.completeQuickWin(index, fp);
+        
+        if (result && result.success) {
+            // Update local state with backend data
+            setState(prev => ({
+                ...prev,
+                quickWins: result.data.quickWins,
+                fp: result.data.fp,
+                combo: result.data.combo,
+                multiplier: result.data.multiplier
+            }));
+            
+            Utils.showNotification(`+${fp} FP earned!`, setNotification);
+        }
     };
 
     // Chat commands
-    const sendCommand = () => {
+    const sendCommand = async () => {
         if (!chatInput.trim()) return;
 
         const newMessages = [...state.chatMessages, { type: 'user', text: `> ${chatInput}` }];
-
-        let response = { type: 'system', text: '' };
-
-        if (chatInput === '/help') {
-            response.text = `>> Available commands:\n/help - Show commands\n/stats - Show your stats\n/yuri - Random Yuri photo (costs 70 FP)\n/news - Hacker news feed`;
-        } else if (chatInput === '/stats') {
-            response.text = `>> STATS:\nFP: ${state.fp}\nCombo: ${state.combo}x\nMultiplier: ${state.multiplier.toFixed(1)}x\nHearts: ${state.hearts}`;
-        } else if (chatInput === '/yuri') {
-            if (state.fp >= 70) {
-                setState(prev => ({ ...prev, fp: prev.fp - 70 }));
-                response.text = `>> Photo unlocked! 📸`;
-                response.image = `https://picsum.photos/300/400?random=${Math.random()}`;
-                response.type = 'reward';
-            } else {
-                response.text = '>> Insufficient FP. Need 70 FP.';
+        const response = processCommand(chatInput);
+        
+        // Handle /yuri purchase
+        if (response.needsPurchase) {
+            try {
+                const result = await API.purchaseItem('yuri', CONFIG.store.yuriPhoto);
+                if (result.success) {
+                    response.text = `>> Photo unlocked! 📸`;
+                    response.image = `https://picsum.photos/300/400?random=${Math.random()}`;
+                    setState(prev => ({ 
+                        ...prev, 
+                        fp: result.data.fp 
+                    }));
+                }
+            } catch (error) {
+                response.text = `>> ${error.message}`;
+                response.type = 'system';
             }
-        } else if (chatInput === '/news') {
-            response.text = `>> Latest hacker news:\n• New productivity framework released\n• Pomodoro technique gains AI integration\n• Focus Point gamification trending`;
-        } else {
-            response.text = '>> Unknown command. Type /help for available commands.';
         }
-
+        
         newMessages.push(response);
 
         setState(prev => ({
@@ -199,276 +280,127 @@ function App() {
     };
 
     // Store functions
-    const buyItem = (type, cost) => {
-        if (state.fp < cost) {
-            showNotificationMsg('❌ Not enough FP!');
-            return;
+    const buyItem = async (type, cost) => {
+        try {
+            const result = await API.purchaseItem(type, cost);
+            
+            if (result.success) {
+                // Update local state with backend data
+                setState(prev => ({
+                    ...prev,
+                    fp: result.data.fp,
+                    hearts: result.data.hearts
+                }));
+
+                if (type === 'heart') {
+                    Utils.showNotification('❤️ Heart restored!', setNotification);
+                } else if (type === 'skip') {
+                    Utils.showNotification('⏭️ Task skipped!', setNotification);
+                } else if (type === 'yuri') {
+                    const photoMsg = {
+                        type: 'reward',
+                        text: '>> Yuri photo unlocked!',
+                        image: `https://picsum.photos/300/400?random=${Math.random()}`
+                    };
+                    setState(prev => ({
+                        ...prev,
+                        chatMessages: [...prev.chatMessages, photoMsg]
+                    }));
+                    Utils.showNotification('🖼️ Photo unlocked!', setNotification);
+                }
+
+                setShowStore(false);
+            }
+        } catch (error) {
+            Utils.showNotification(error.message, setNotification);
         }
-
-        setState(prev => ({ ...prev, fp: prev.fp - cost }));
-
-        if (type === 'heart') {
-            setState(prev => ({ ...prev, hearts: 1 }));
-            showNotificationMsg('❤️ Heart restored!');
-        } else if (type === 'skip') {
-            showNotificationMsg('⏭️ Task skipped!');
-        } else if (type === 'yuri') {
-            const photoMsg = {
-                type: 'reward',
-                text: '>> Yuri photo unlocked!',
-                image: `https://picsum.photos/300/400?random=${Math.random()}`
-            };
-            setState(prev => ({
-                ...prev,
-                chatMessages: [...prev.chatMessages, photoMsg]
-            }));
-            showNotificationMsg('🖼️ Photo unlocked!');
-        }
-
-        setShowStore(false);
     };
 
-    // Notification
-    const showNotificationMsg = (text) => {
-        setNotification({ show: true, text });
-        setTimeout(() => {
-            setNotification({ show: false, text: '' });
-        }, 3000);
+    // Privacy toggle with backend sync
+    const togglePrivacy = () => {
+        const newPrivacy = !state.privacy;
+        setState(prev => ({ ...prev, privacy: newPrivacy }));
+        API.saveProgress({ privacy: newPrivacy });
     };
 
-    // Format time
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    };
+    // Calculate activity progress
+    const activityProgress = state.timerRunning 
+        ? ((CONFIG.pomodoro.defaultDuration * 60 - state.timeRemaining) / (CONFIG.pomodoro.defaultDuration * 60) * 100) 
+        : 0;
 
-    // Calculate progress percentages
-    const levelProgress = (state.minutes % 100) / 100 * 100;
-    const activityProgress = state.timerRunning ? ((25 * 60 - state.timeRemaining) / (25 * 60) * 100) : 0;
-    const circleCircumference = 326.73;
-    const circleOffset = circleCircumference - (activityProgress / 100) * circleCircumference;
-    const comboProgress = Math.min(state.combo / 5, 1) * 100;
+    if (state.loading) {
+        return (
+            <div className="container" style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '100vh' 
+            }}>
+                <div style={{ fontSize: '24px', color: 'var(--accent-cyan)' }}>
+                    Loading...
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container">
-            {/* Top Menu */}
-            <div className="top-menu">
-                <div className="fp-display">
-                    <span className="fp-icon">⬢</span>
-                    <span>{state.fp}</span> FP
-                </div>
-                <div className="level-progress">
-                    <div className="level-label">Level Progress</div>
-                    <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: `${levelProgress}%` }}></div>
-                        <div className="progress-text">{state.minutes % 100} / 100 min</div>
-                    </div>
-                </div>
-                <div className="hearts">
-                    <div className={`heart ${state.hearts === 0 ? 'empty' : ''}`}>❤️</div>
-                </div>
-                <div className="privacy-toggle">
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Privacy</span>
-                    <div 
-                        className={`toggle-switch ${state.privacy ? 'active' : ''}`}
-                        onClick={() => setState(prev => ({ ...prev, privacy: !prev.privacy }))}
-                    >
-                        <div className="toggle-slider"></div>
-                    </div>
-                </div>
-            </div>
+            <TopMenu 
+                state={state}
+                onPrivacyToggle={togglePrivacy}
+            />
 
-            {/* Grid Layout */}
             <div className="grid">
-                {/* Box 1 - Streaks */}
-                <div className="box box1">
-                    <div className="box-title">Streaks</div>
-                    <div className={`streak-item ${!state.privacy ? 'privacy-hidden' : ''}`}>
-                        <span className="streak-name">Porn-Free</span>
-                        <span className="streak-count">{state.streaks.porn}</span>
-                    </div>
-                    <div className="streak-item">
-                        <span className="streak-name">Routine</span>
-                        <span className="streak-count">{state.streaks.routine}</span>
-                    </div>
-                    <div className="streak-item">
-                        <span className="streak-name">Code</span>
-                        <span className="streak-count">{state.streaks.code}</span>
-                    </div>
-                </div>
-
-                {/* Box 2 - Time Breakdown */}
-                <div className="box box2">
-                    <div className="box-title">Time Breakdown</div>
-                    {['Coding', 'Learning', 'Exercise', 'Other'].map((category, i) => (
-                        <div key={category}>
-                            <div className="time-item">
-                                <span className="time-category">{category}</span>
-                                <span className="time-value">0h 0m</span>
-                            </div>
-                            <div className="time-bar">
-                                <div className="time-bar-fill" style={{ width: '0%' }}></div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Box 3 - Chat */}
-                <div className="box box3">
-                    <div className="box-title">Hacker Terminal</div>
-                    <div className="chat-container">
-                        <div className="chat-messages">
-                            {state.chatMessages.map((msg, i) => (
-                                <div key={i} className={`chat-message ${msg.type}`}>
-                                    {msg.text.split('\n').map((line, j) => (
-                                        <div key={j}>{line}</div>
-                                    ))}
-                                    {msg.image && (
-                                        <img 
-                                            src={msg.image} 
-                                            style={{ width: '100%', borderRadius: '8px', marginTop: '10px' }} 
-                                            alt="Yuri"
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="chat-input">
-                            <input
-                                type="text"
-                                value={chatInput}
-                                onChange={(e) => setChatInput(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && sendCommand()}
-                                placeholder="Enter command..."
-                            />
-                            <button onClick={sendCommand}>SEND</button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Box 4 - Waffle Chart */}
-                <div className="box box4">
-                    <div className="box-title">Activity Waffle</div>
-                    <div className="waffle-grid">
-                        {Array.from({ length: 28 }, (_, i) => (
-                            <div 
-                                key={i} 
-                                className={`waffle-cell ${i === 27 ? 'active' : ''}`}
-                            ></div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Box 5 - Pomodoro */}
-                <div className="box box5">
-                    <div className="box-title">Pomodoro Timer</div>
-                    <div className="pomodoro-timer">
-                        <div className="timer-display">{formatTime(state.timeRemaining)}</div>
-                        <div className="circular-progress">
-                            <svg width="120" height="120">
-                                <circle className="circle-bg" cx="60" cy="60" r="52"></circle>
-                                <circle 
-                                    className="circle-progress" 
-                                    cx="60" 
-                                    cy="60" 
-                                    r="52"
-                                    strokeDasharray={circleCircumference}
-                                    strokeDashoffset={circleOffset}
-                                ></circle>
-                            </svg>
-                        </div>
-                        <input
-                            type="text"
-                            className="timer-input"
-                            value={taskInput}
-                            onChange={(e) => setTaskInput(e.target.value)}
-                            placeholder="What are you working on?"
-                        />
-                        <div className="timer-controls">
-                            <button className="timer-button" onClick={startTimer}>START</button>
-                            <button className="timer-button" onClick={resetTimer}>RESET</button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Box 6 - Current Activity */}
-                <div className="box box6">
-                    <div className="box-title">Current Activity</div>
-                    <div className="activity-name">{state.currentTask}</div>
-                    <div className="activity-progress">
-                        <div className="activity-bar">
-                            <div className="activity-bar-fill" style={{ width: `${activityProgress}%` }}></div>
-                        </div>
-                    </div>
-                    <div className="activity-next">
-                        {state.timerRunning ? `${formatTime(state.timeRemaining)} remaining` : 'Start a Pomodoro session'}
-                    </div>
-                </div>
-
-                {/* Box 7 - Momentum Multiplier */}
-                <div className="box box7">
-                    <div className="box-title">Momentum Multiplier</div>
-                    <div className="multiplier-display">
-                        <div className="multiplier-value">{state.multiplier.toFixed(1)}x</div>
-                        <div className="combo-count">Combo: {state.combo} activities</div>
-                    </div>
-                    <div className="combo-bar">
-                        <div className="combo-bar-fill" style={{ width: `${comboProgress}%` }}></div>
-                    </div>
-                </div>
-
-                {/* Box 8 - Quick Wins */}
-                <div className="box box8">
-                    <div className="box-title">Quick Wins</div>
-                    {[
-                        { text: 'Drank water', fp: 1 },
-                        { text: 'Stretched/Moved', fp: 3 },
-                        { text: 'Logged progress', fp: 2 },
-                        { text: 'Helped someone', fp: 3 }
-                    ].map((win, i) => (
-                        <div 
-                            key={i}
-                            className={`quick-win ${state.quickWins[i] ? 'completed' : ''}`}
-                            onClick={() => completeQuickWin(i, win.fp)}
-                        >
-                            <div className="checkbox">{state.quickWins[i] ? '✓' : ''}</div>
-                            <div className="quick-win-text">{win.text}</div>
-                            <div className="quick-win-fp">+{win.fp} FP</div>
-                        </div>
-                    ))}
-                </div>
+                <Streaks streaks={state.streaks} privacy={state.privacy} />
+                
+                <TimeBreakdown timeData={state.timeData} />
+                
+                <ChatTerminal 
+                    messages={state.chatMessages}
+                    input={chatInput}
+                    onInputChange={setChatInput}
+                    onSendCommand={sendCommand}
+                />
+                
+                <WaffleChart />
+                
+                <PomodoroTimer 
+                    timeRemaining={state.timeRemaining}
+                    isRunning={state.timerRunning}
+                    taskInput={taskInput}
+                    onTaskInputChange={setTaskInput}
+                    onStart={() => startTimer(taskInput)}
+                    onReset={resetTimer}
+                />
+                
+                <CurrentActivity 
+                    taskName={state.currentTask}
+                    progress={activityProgress}
+                    timeRemaining={state.timeRemaining}
+                    isRunning={state.timerRunning}
+                />
+                
+                <MomentumMultiplier 
+                    multiplier={state.multiplier}
+                    combo={state.combo}
+                />
+                
+                <QuickWins 
+                    completedWins={state.quickWins}
+                    onComplete={completeQuickWin}
+                />
             </div>
 
-            {/* Store Button */}
             <button className="store-button" onClick={() => setShowStore(true)}>🛒</button>
 
-            {/* Store Modal */}
-            {showStore && (
-                <div className="modal active">
-                    <div className="modal-content">
-                        <div className="modal-title">⬢ FP STORE</div>
-                        <div className="store-item" onClick={() => buyItem('heart', 150)}>
-                            <span className="store-item-name">❤️ Restore Heart (1 day)</span>
-                            <span className="store-item-price">150 FP</span>
-                        </div>
-                        <div className="store-item" onClick={() => buyItem('skip', 40)}>
-                            <span className="store-item-name">⏭️ Skip a Task</span>
-                            <span className="store-item-price">40 FP</span>
-                        </div>
-                        <div className="store-item" onClick={() => buyItem('yuri', 70)}>
-                            <span className="store-item-name">🖼️ Yuri Photo</span>
-                            <span className="store-item-price">70 FP</span>
-                        </div>
-                        <button className="close-modal" onClick={() => setShowStore(false)}>CLOSE</button>
-                    </div>
-                </div>
-            )}
+            <StoreModal 
+                isOpen={showStore}
+                currentFP={state.fp}
+                onClose={() => setShowStore(false)}
+                onPurchase={buyItem}
+            />
 
-            {/* Notification */}
-            <div className={`notification ${notification.show ? 'show' : ''}`}>
-                {notification.text}
-            </div>
+            <Notification show={notification.show} text={notification.text} />
         </div>
     );
 }

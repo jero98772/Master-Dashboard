@@ -19,13 +19,29 @@
 <body>
     <div id="root"></div>
     
-    {# You can pass server-side data to JavaScript like this:
-    <script>
-        window.initialData = {{ user_data | tojson }};
-    </script>
-    #}
+    <!-- Configuration -->
+    <script type="text/babel" src="{{ url_for('static', filename='js/config.js') }}"></script>
     
-    <!-- React App -->
+    <!-- API Service -->
+    <script type="text/babel" src="{{ url_for('static', filename='js/api.js') }}"></script>
+    
+    <!-- Utilities -->
+    <script type="text/babel" src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    
+    <!-- Components -->
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/TopMenu.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/Streaks.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/TimeBreakdown.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/ChatTerminal.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/WaffleChart.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/PomodoroTimer.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/CurrentActivity.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/MomentumMultiplier.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/QuickWins.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/StoreModal.js') }}"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='js/components/Notification.js') }}"></script>
+    
+    <!-- Main App (Backend Connected) -->
     <script type="text/babel" src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
