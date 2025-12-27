@@ -1,0 +1,55 @@
+╔════════════════════════════════════════════════════════════╗
+║           PRODUCTIVITY DASHBOARD - Oct 4, 2025            ║
+╚════════════════════════════════════════════════════════════╝
+
+🔥 STREAKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Porn-Free:        🔥  42 days  (Best: 42)
+  Routine Complete: 🔥  12 days  (Best: 18) 
+  GitHub Active:    🔥   8 days  (Best: 23)
+  
+💾 Lives Available: ❤️  ❤️  ⚫  (2/3)
+
+📊 TODAY'S PROGRESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Morning Study:  ⬛⬛⬛⬜  3/4 blocks
+  Exercise:       ⏱  Not Started (7PM reminder)
+  
+⏱️  WEEK TIME BREAKDOWN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Courses:        8h 45m
+  Work:          12h 30m
+  Uni:            5h 15m
+  Coding:        10h 20m
+  
+📅 LAST 100 DAYS (Waffle Plot)
+█ █ █ █ █ █ █ █ █ █ 
+█ █ █ █ █ █ █ █ █ █ 
+█ █ █ █ █ ░ █ █ █ █ 
+
+
+improve this add pomodoro botton
+what im doing now
+add txt file and show a progress bar when it start and when it ends for each part of the schedule
+
+privacy button on/off
+
+Points must be spendable, not decorative.
+Examples:
+Restore ½ ❤️ → 20 FP
+Skip a day penalty → 30 FP
+Unlock theme → 50 FP
+Buy streak shield → 40 FP
+(yuri)
+
+
+Sounds you need (max 3):
+Session start → soft click
+Session end → reward chime
+Level up / streak saved → slightly stronger sound
+
+Wishes list / proyect and learning materials
+
+Focus points
+
+Yuri chat
