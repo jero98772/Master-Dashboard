@@ -295,6 +295,43 @@ def reset_all():
         'data': user_data
     })
 
+@app.route('/api/hacker-news', methods=['GET'])
+def get_hacker_news():
+    """Fetch top 10 Hacker News stories"""
+    import requests
+    
+    try:
+        # Get top 10 story IDs
+        stories_response = requests.get('https://hacker-news.firebaseio.com/v0/newstories.json', timeout=5)
+        story_ids = stories_response.json()[:10]
+        
+        stories = []
+        for story_id in story_ids:
+            # Fetch each story
+            story_response = requests.get(f'https://hacker-news.firebaseio.com/v0/item/{story_id}.json', timeout=5)
+            story = story_response.json()
+            
+            if story:
+                stories.append({
+                    'id': story.get('id'),
+                    'title': story.get('title', 'No title'),
+                    'url': story.get('url') or f"https://news.ycombinator.com/item?id={story.get('id')}",
+                    'score': story.get('score', 0),
+                    'by': story.get('by', 'unknown')
+                })
+        
+        return jsonify({
+            'success': True,
+            'stories': stories
+        })
+    
+    except Exception as e:
+        print(f"Error fetching Hacker News: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     print(f"Starting FocusPoint Tracker")
     print(f"Data will be saved to: {os.path.abspath(DATA_FILE)}")

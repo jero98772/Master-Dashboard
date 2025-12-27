@@ -1,5 +1,5 @@
 {
-  "fp": 148,
+  "fp": 178,
   "minutes": 42,
   "hearts": 1,
   "privacy": false,
@@ -38,7 +38,7 @@
       "percentage": 100
     }
   },
-  "last_updated": "2025-12-27T14:54:31.690947",
+  "last_updated": "2025-12-27T18:25:38.430329",
   "completedPomodoros": 4,
-  "cycleCount": 4
+  "cycleCount": 0
 }
