@@ -33,7 +33,7 @@ const PomodoroTimer = ({
 
     return (
         <div className="box box5">
-            <div className="box-title">Pomodoro Timer</div>
+            <div className="box-title"><h1>Pomodoro Timer</h1></div>
             <div className="pomodoro-timer">
                 {/* Cycle indicator */}
                 <div style={{ 

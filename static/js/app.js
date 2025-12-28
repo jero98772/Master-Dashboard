@@ -246,7 +246,7 @@ function App() {
             // Format stories for chat
             let newsText = '>> 📰 Latest Hacker News:\n\n';
             result.stories.slice(0, 8).forEach((story, i) => {
-                newsText += `${i + 1}. <b> ${story.title}</b>\n`;
+                newsText += `${i + 1}.  ${story.title}\n`;
                 newsText += `   ${story.url}\n\n`;
             });
 

@@ -9,7 +9,7 @@ const WaffleChart = ({ activedays = [] }) => {
 
     return (
         <div className="box box4">
-            <div className="box-title">Activity Waffle</div>
+            <div className="box-title"><h1>Activity Waffle</h1></div>
             <div className="waffle-grid">
                 {days.map((day) => (
                     <div 

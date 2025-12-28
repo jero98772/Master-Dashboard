@@ -297,7 +297,6 @@ def reset_all():
 
 @app.route('/api/hacker-news', methods=['GET'])
 def get_hacker_news():
-    """Fetch top 10 Hacker News stories"""
     import requests
     
     try:

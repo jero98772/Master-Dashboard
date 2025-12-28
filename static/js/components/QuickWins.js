@@ -2,7 +2,7 @@
 const QuickWins = ({ completedWins, onComplete }) => {
     return (
         <div className="box box8">
-            <div className="box-title">Quick Wins</div>
+            <div className="box-title"><h1>Quick Wins</h1></div>
             {CONFIG.quickWins.map((win, i) => (
                 <div 
                     key={i}

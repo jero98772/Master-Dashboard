@@ -79,7 +79,7 @@ const CurrentActivity = ({
 
     return (
         <div className="box box6">
-            <div className="box-title">Current Activity</div>
+            <div className="box-title"><h1>Current Activity</h1></div>
             
             {/* Current Scheduled Task */}
             {currentScheduledTask && !isRunning && (

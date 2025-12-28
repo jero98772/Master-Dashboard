@@ -2,7 +2,7 @@
 const TimeBreakdown = ({ timeData }) => {
     return (
         <div className="box box2">
-            <div className="box-title">Time Breakdown</div>
+            <div className="box-title"><h1>Time Breakdown</h1></div>
             {CONFIG.timeCategories.map((cat) => {
                 const key = cat.split(' ')[0].toLowerCase();
                 const data = timeData[key] || { minutes: 0, percentage: 0 };

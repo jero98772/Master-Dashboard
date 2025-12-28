@@ -32,6 +32,8 @@ body {
 .container {
     max-width: 1600px;
     margin: 0 auto;
+    width: 100%;
+    padding: 0;
 }
 
 /* Top Menu */
@@ -155,6 +157,8 @@ body {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(4, auto);
     gap: 20px;
+    width: 100%;
+    max-width: 100%;
 }
 
 .box {
@@ -164,6 +168,25 @@ body {
     padding: 20px;
     position: relative;
     overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.box:nth-child(1) { animation-delay: 0.1s; }
+.box:nth-child(2) { animation-delay: 0.15s; }
+.box:nth-child(3) { animation-delay: 0.2s; }
+.box:nth-child(4) { animation-delay: 0.25s; }
+.box:nth-child(5) { animation-delay: 0.3s; }
+.box:nth-child(6) { animation-delay: 0.35s; }
+.box:nth-child(7) { animation-delay: 0.4s; }
+.box:nth-child(8) { animation-delay: 0.45s; }
+
+.box:hover {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .box::before {
@@ -266,6 +289,8 @@ body {
     height: 100%;
     background: var(--accent-yellow);
     box-shadow: 0 0 8px var(--accent-yellow);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: progressPulse 2s infinite;
 }
 
 /* Box 3 - Chat */
@@ -318,6 +343,67 @@ body {
 @keyframes slideIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 10px var(--glow-cyan);
+    }
+    50% {
+        box-shadow: 0 0 25px var(--glow-cyan);
+    }
+}
+
+@keyframes progressPulse {
+    0%, 100% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
 }
 
 .chat-message.system {
@@ -441,13 +527,38 @@ body {
     cursor: pointer;
     font-family: 'Orbitron', sans-serif;
     font-weight: 700;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.timer-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(0, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.timer-button:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .timer-button:hover {
     background: var(--accent-cyan);
     color: var(--bg-dark);
-    box-shadow: 0 0 15px var(--glow-cyan);
+    box-shadow: 0 0 20px var(--glow-cyan);
+    transform: translateY(-2px) scale(1.05);
+}
+
+.timer-button:active {
+    transform: translateY(0) scale(0.98);
 }
 
 .timer-input {
@@ -523,7 +634,34 @@ body {
     height: 100%;
     background: linear-gradient(90deg, var(--accent-pink), var(--accent-yellow));
     box-shadow: 0 0 10px var(--glow-pink);
-    transition: width 0.5s ease;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.activity-bar-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
 }
 
 .activity-next {
@@ -777,30 +915,491 @@ body {
     transform: translateX(0);
 }
 
-@media (max-width: 1200px) {
-    .grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    .box3 {
-        grid-column: 2;
-        grid-row: 1 / 3;
+
+/* ========================================
+   RESPONSIVE DESIGN - ENHANCED
+   ======================================== */
+
+/* Mobile Priority Order on Small Screens */
+.grid {
+    position: relative;
+}
+
+/* Large Desktop (1400px+) - Default Grid */
+@media (min-width: 1401px) {
+    .container {
+        max-width: 1600px;
     }
 }
 
-@media (max-width: 768px) {
+/* Laptop/Desktop (1024px - 1400px) */
+@media (max-width: 1400px) {
     .grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
-    .box3 {
-        grid-column: 1;
-        grid-row: auto;
+
+    .box1 { grid-column: 1; grid-row: 1; }
+    .box2 { grid-column: 2; grid-row: 1; }
+    .box3 { grid-column: 1 / 3; grid-row: 2; min-height: 400px; }
+    .box4 { grid-column: 1; grid-row: 3; }
+    .box5 { grid-column: 2; grid-row: 3; }
+    .box6 { grid-column: 1; grid-row: 4; }
+    .box7 { grid-column: 2; grid-row: 4; }
+    .box8 { grid-column: 1 / 3; grid-row: 5; }
+}
+
+/* Tablet (768px - 1024px) */
+@media (max-width: 1024px) {
+    body {
+        padding: 12px;
     }
+
     .top-menu {
-        flex-direction: column;
+        padding: 15px;
+        gap: 12px;
+    }
+
+    .fp-display {
+        font-size: 20px;
+    }
+
+    .grid {
         gap: 15px;
     }
+
+    .box {
+        padding: 16px;
+    }
+
+    .timer-display {
+        font-size: 40px;
+    }
+
+    .circular-progress svg {
+        width: 110px;
+        height: 110px;
+    }
+}
+
+/* Mobile (481px - 768px) - PRIORITY LAYOUT */
+@media (max-width: 768px) {
+    body {
+        padding: 8px;
+    }
+
+    /* Switch to flex for priority order */
+    .grid {
+        display: flex !important;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* SMART MOBILE PRIORITY ORDER */
+    .box5 { order: 1; }  /* ⏰ Timer FIRST - main tool */
+    .box6 { order: 2; }  /* 📊 Current Activity */
+    .box1 { order: 3; }  /* 🔥 Streaks - motivation */
+    .box7 { order: 4; }  /* ⚡ Multiplier - gamification */
+    .box2 { order: 5; }  /* 📈 Time Breakdown */
+    .box8 { order: 6; }  /* ✅ Quick Wins */
+    .box4 { order: 7; }  /* 📅 Waffle Chart */
+    .box3 { order: 8; }  /* 💬 Chat - scroll to access */
+
+    /* Top Menu - Mobile Optimized */
+    .top-menu {
+        padding: 10px;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .menu-left {
+        flex: 1 1 100%;
+        order: 2;
+        justify-content: center;
+    }
+
+    .menu-right {
+        flex: 1 1 100%;
+        order: 1;
+        justify-content: center;
+    }
+
     .level-progress {
+        flex: 1 1 100%;
+        order: 3;
+        margin: 8px 0 0 0;
+        max-width: 100%;
+    }
+
+    .fp-display {
+        font-size: 18px;
+        padding: 8px 14px;
+    }
+
+    .hearts {
+        font-size: 18px;
+    }
+
+    .store-button, .privacy-toggle {
+        font-size: 11px;
+        padding: 8px 12px;
+    }
+
+    .level-bar {
+        height: 6px;
+    }
+
+    /* Boxes */
+    .box {
+        padding: 14px;
+        border-radius: 10px;
+        width: 100%;
+    }
+
+    .box-title {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    /* Timer - Optimized */
+    .timer-display {
+        font-size: 36px;
+    }
+
+    .circular-progress svg {
+        width: 100px;
+        height: 100px;
+    }
+
+    .timer-button {
+        font-size: 12px;
+        padding: 12px;
+    }
+
+    .timer-input {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    /* Chat - Better Mobile UX */
+    .chat-container {
+        min-height: 350px;
+    }
+
+    .chat-messages {
+        min-height: 280px;
+        padding: 10px;
+    }
+
+    .chat-message {
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .chat-input input {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .chat-input button {
+        font-size: 12px;
+        padding: 12px 20px;
+    }
+
+    /* Streaks - Compact */
+    .streak-box {
+        padding: 12px;
+    }
+
+    .streak-count {
+        font-size: 22px;
+    }
+
+    .streak-label {
+        font-size: 11px;
+    }
+
+    /* Time Breakdown - Readable */
+    .time-item {
+        font-size: 12px;
+    }
+
+    .time-bar {
+        height: 8px;
+    }
+
+    /* Waffle - Visible */
+    .waffle-cell {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Quick Wins - Stack */
+    .quick-wins-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .quick-win-item {
+        font-size: 12px;
+        padding: 12px;
+    }
+
+    /* Modal - Full Screen */
+    .modal-content {
+        width: 100%;
+        height: 100%;
         max-width: 100%;
         margin: 0;
+        border-radius: 0;
+        padding: 16px;
+    }
+
+    .store-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    body {
+        padding: 6px;
+    }
+
+    .grid {
+        gap: 8px;
+    }
+
+    .top-menu {
+        padding: 8px;
+    }
+
+    .fp-display {
+        font-size: 16px;
+        padding: 6px 12px;
+    }
+
+    .hearts {
+        font-size: 16px;
+    }
+
+    .store-button, .privacy-toggle {
+        font-size: 10px;
+        padding: 6px 10px;
+    }
+
+    .box {
+        padding: 12px;
+    }
+
+    .box-title {
+        font-size: 12px;
+    }
+
+    /* Timer - Compact */
+    .timer-display {
+        font-size: 32px;
+    }
+
+    .circular-progress svg {
+        width: 90px;
+        height: 90px;
+    }
+
+    .timer-controls {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .timer-button {
+        width: 100%;
+        font-size: 11px;
+        padding: 10px;
+    }
+
+    .timer-input {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    /* Chat - Compact */
+    .chat-container {
+        min-height: 300px;
+    }
+
+    .chat-messages {
+        min-height: 220px;
+    }
+
+    .chat-message {
+        font-size: 11px;
+        padding: 8px;
+    }
+
+    .chat-input {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .chat-input input {
+        font-size: 13px;
+        padding: 10px;
+    }
+
+    .chat-input button {
+        width: 100%;
+        font-size: 11px;
+        padding: 10px;
+    }
+
+    /* Other elements */
+    .streak-box {
+        padding: 10px;
+    }
+
+    .streak-count {
+        font-size: 20px;
+    }
+
+    .time-item {
+        font-size: 11px;
+    }
+
+    .waffle-cell {
+        width: 11px;
+        height: 11px;
+    }
+
+    .multiplier-display {
+        font-size: 28px;
+    }
+
+    .quick-win-item {
+        font-size: 11px;
+        padding: 10px;
+    }
+}
+
+/* Landscape Phones (height < 500px) */
+@media (max-height: 500px) and (orientation: landscape) {
+    .grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .box5 { grid-column: 1; grid-row: 1; order: initial; }
+    .box6 { grid-column: 2; grid-row: 1; order: initial; }
+    .box1 { grid-column: 1; grid-row: 2; order: initial; }
+    .box7 { grid-column: 2; grid-row: 2; order: initial; }
+    .box3 { grid-column: 1 / 3; grid-row: 3; order: initial; }
+
+    .chat-container {
+        min-height: 250px;
+    }
+
+    .timer-display {
+        font-size: 28px;
+    }
+
+    .circular-progress svg {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+/* Touch Devices - ENHANCED */
+@media (hover: none) and (pointer: coarse) {
+    /* iOS Minimum Touch Targets (44x44px) */
+    .timer-button,
+    .chat-input button,
+    .store-button,
+    .privacy-toggle,
+    .quick-win-item,
+    .store-item button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Prevent iOS Zoom */
+    .timer-input,
+    .chat-input input,
+    select {
+        font-size: 16px !important;
+        min-height: 44px;
+    }
+
+    /* Disable Hover Effects */
+    .box:hover,
+    .timer-button:hover,
+    button:hover {
+        transform: none;
+    }
+
+    /* Enhanced Active States */
+    .timer-button:active {
+        transform: scale(0.96);
+        background: var(--accent-cyan);
+        color: var(--bg-dark);
+    }
+
+    button:active {
+        transform: scale(0.96);
+    }
+
+    .box:active {
+        transform: scale(0.99);
+    }
+
+    /* Smooth Touch Scrolling */
+    .chat-messages,
+    .modal-content {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Retina Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .box-title,
+    .timer-display,
+    .fp-display {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* Print */
+@media print {
+    .top-menu,
+    .box3,
+    .box5,
+    .box7,
+    .box8 {
+        display: none;
+    }
+
+    .grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    .box {
+        border: 1px solid #000;
+        break-inside: avoid;
     }
 }

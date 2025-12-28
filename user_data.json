@@ -1,6 +1,6 @@
 {
-  "fp": 178,
-  "minutes": 42,
+  "fp": 308,
+  "minutes": 162,
   "hearts": 1,
   "privacy": false,
   "streaks": {
@@ -8,8 +8,8 @@
     "routine": 0,
     "code": 0
   },
-  "combo": 8,
-  "multiplier": 2,
+  "combo": 0,
+  "multiplier": 1,
   "quickWins": [
     true,
     true,
@@ -22,23 +22,23 @@
       "percentage": 0
     },
     "exercise": {
-      "minutes": 0,
-      "percentage": 0
+      "minutes": 50,
+      "percentage": 63
     },
     "learning": {
       "minutes": 0,
       "percentage": 0
     },
     "other": {
-      "minutes": 0,
-      "percentage": 0
+      "minutes": 25,
+      "percentage": 32
     },
     "work": {
       "minutes": 4,
-      "percentage": 100
+      "percentage": 5
     }
   },
-  "last_updated": "2025-12-27T18:25:38.430329",
-  "completedPomodoros": 4,
-  "cycleCount": 0
+  "last_updated": "2025-12-27T22:43:15.625496",
+  "completedPomodoros": 7,
+  "cycleCount": 1
 }

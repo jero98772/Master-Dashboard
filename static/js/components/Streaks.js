@@ -2,7 +2,7 @@
 const Streaks = ({ streaks, privacy }) => {
     return (
         <div className="box box1">
-            <div className="box-title">Streaks</div>
+            <div className="box-title"><h1>Streaks</h1></div>
             <div className={`streak-item ${!privacy ? 'privacy-hidden' : ''}`}>
                 <span className="streak-name">Porn-Free</span>
                 <span className="streak-count">{streaks.porn}</span>
