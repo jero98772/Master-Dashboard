@@ -1403,3 +1403,163 @@ body {
         break-inside: avoid;
     }
 }
+/* Waffle Chart Styles */
+.waffle-info {
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.waffle-container {
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.waffle-grid {
+    display: grid;
+    grid-template-columns: repeat(52, 1fr);
+    gap: 1px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.waffle-cell {
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 10px;
+    max-height: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 1px;
+    transition: all 0.2s;
+    position: relative;
+    cursor: pointer;
+}
+
+/* States */
+.waffle-cell.empty {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.waffle-cell.opened {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Intensity levels */
+.waffle-cell.active.low {
+    background: rgba(0, 255, 255, 0.3);
+}
+
+.waffle-cell.active.medium {
+    background: rgba(0, 255, 255, 0.5);
+}
+
+.waffle-cell.active.high {
+    background: rgba(0, 255, 255, 0.7);
+}
+
+.waffle-cell.active.extreme {
+    background: rgba(0, 255, 255, 1);
+    box-shadow: 0 0 3px rgba(0, 255, 255, 0.6);
+}
+
+.waffle-cell:hover {
+    transform: scale(1.5);
+    z-index: 10;
+    border-radius: 2px;
+}
+
+/* Today indicator */
+.today-indicator {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 4px;
+    height: 4px;
+    background: var(--accent-yellow);
+    border-radius: 50%;
+    box-shadow: 0 0 3px var(--accent-yellow);
+    animation: pulse 2s infinite;
+}
+
+/* Legend */
+.waffle-legend {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 9px;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.legend-cell {
+    width: 10px !important;
+    height: 10px !important;
+    max-width: 10px !important;
+    max-height: 10px !important;
+    min-width: 10px;
+    min-height: 10px;
+}
+
+/* Responsive waffle */
+@media (max-width: 1400px) {
+    .waffle-cell {
+        max-width: 9px;
+        max-height: 9px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .waffle-grid {
+        grid-template-columns: repeat(52, 1fr);
+        gap: 1px;
+    }
+    
+    .waffle-cell {
+        max-width: 8px;
+        max-height: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .waffle-grid {
+        grid-template-columns: repeat(26, 1fr);
+    }
+    
+    .waffle-cell {
+        max-width: 12px;
+        max-height: 12px;
+    }
+    
+    .legend-cell {
+        width: 12px !important;
+        height: 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .waffle-grid {
+        grid-template-columns: repeat(26, 1fr);
+    }
+    
+    .waffle-cell {
+        max-width: 10px;
+        max-height: 10px;
+    }
+    
+    .waffle-legend {
+        font-size: 8px;
+        gap: 4px;
+    }
+}

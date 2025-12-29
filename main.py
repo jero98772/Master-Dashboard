@@ -357,19 +357,30 @@ def check_daily_reset():
         
         # Check if it's a new day
         if last_reset != today:
-            # Save yesterday's data to waffle
+            print(f"🔄 Daily reset triggered: {last_reset} → {today}")
+            
+            # Save yesterday's data to waffle (only if there was activity)
             yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
             waffle_data = user_data.get('waffleData', {})
-            waffle_data[yesterday] = user_data.get('completedPomodoros', 0)
             
-            # Reset daily items
+            # Only save if user opened app yesterday (had completed pomodoros)
+            pomodoros_yesterday = user_data.get('completedPomodoros', 0)
+            if pomodoros_yesterday > 0:
+                waffle_data[yesterday] = pomodoros_yesterday
+                print(f"✅ Saved {pomodoros_yesterday} Pomodoros for {yesterday}")
+            
+            # Mark today in waffle as opened (0 to start)
+            waffle_data[today] = 0
+            print(f"📅 New session started for {today}")
+            
+            # Reset daily session data
             user_data['quickWins'] = [False, False, False, False]
             user_data['completedPomodoros'] = 0
             user_data['cycleCount'] = 0
             user_data['combo'] = 0
             user_data['multiplier'] = 1.0
             
-            # Move today's time to history and reset
+            # Reset time breakdown (fresh start)
             user_data['timeData'] = {
                 'work': {'minutes': 0, 'percentage': 0},
                 'coding': {'minutes': 0, 'percentage': 0},
@@ -387,15 +398,32 @@ def check_daily_reset():
             
             user_data['waffleData'] = waffle_data
             user_data['lastResetDate'] = today
+            user_data['last_updated'] = datetime.now().isoformat()
             
             save_user_data(user_data)
+            
+            print(f"✨ Daily reset complete!")
+            print(f"   - Quick Wins: Reset")
+            print(f"   - Time Data: Reset")
+            print(f"   - Pomodoros: 0")
+            print(f"   - Waffle: Day {today} added")
             
             return jsonify({
                 'success': True,
                 'reset_performed': True,
-                'message': 'Daily reset completed',
+                'message': f'New session started for {today}',
                 'data': user_data
             })
+        
+        # Same day - just mark as opened if not already
+        waffle_data = user_data.get('waffleData', {})
+        if today not in waffle_data:
+            # User opened app for first time today
+            waffle_data[today] = user_data.get('completedPomodoros', 0)
+            user_data['waffleData'] = waffle_data
+            user_data['lastResetDate'] = today
+            save_user_data(user_data)
+            print(f"📅 First session of {today} - waffle marked")
         
         return jsonify({
             'success': True,
@@ -404,7 +432,9 @@ def check_daily_reset():
         })
     
     except Exception as e:
-        print(f"Error in daily reset: {e}")
+        print(f"❌ Error in daily reset: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)
