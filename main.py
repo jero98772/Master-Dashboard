@@ -12,7 +12,7 @@ DATA_FILE = 'user_data.json'
 DEFAULT_USER_DATA = {
     'fp': 0,
     'minutes': 0,
-    'hearts': 1,
+    'hearts': 3,
     'privacy': False,
     'streaks': {
         'porn': 0,
@@ -30,6 +30,14 @@ DEFAULT_USER_DATA = {
         'learning': {'minutes': 0, 'percentage': 0},
         'exercise': {'minutes': 0, 'percentage': 0},
         'other': {'minutes': 0, 'percentage': 0}
+    },
+    'waffleData': {},  # { 'YYYY-MM-DD': pomodoros_count }
+    'lastResetDate': datetime.now().strftime('%Y-%m-%d'),
+    'lastLoginDate': datetime.now().strftime('%Y-%m-%d'),
+    'yesterdayStreaks': {
+        'porn': None,
+        'routine': None,
+        'code': None
     },
     'last_updated': datetime.now().isoformat()
 }
@@ -111,6 +119,12 @@ def save_progress():
         user_data['timeData'] = data['timeData']
     if 'completedPomodoros' in data:
         user_data['completedPomodoros'] = data['completedPomodoros']
+        
+        # Update today's waffle data in real-time
+        today = datetime.now().strftime('%Y-%m-%d')
+        waffle_data = user_data.get('waffleData', {})
+        waffle_data[today] = data['completedPomodoros']
+        user_data['waffleData'] = waffle_data
     if 'cycleCount' in data:
         user_data['cycleCount'] = data['cycleCount']
     
@@ -297,6 +311,7 @@ def reset_all():
 
 @app.route('/api/hacker-news', methods=['GET'])
 def get_hacker_news():
+    """Fetch top 10 Hacker News stories"""
     import requests
     
     try:
@@ -326,6 +341,110 @@ def get_hacker_news():
     
     except Exception as e:
         print(f"Error fetching Hacker News: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/check-daily-reset', methods=['POST'])
+def check_daily_reset():
+    """Check if daily reset is needed and perform it"""
+    global user_data
+    
+    try:
+        today = datetime.now().strftime('%Y-%m-%d')
+        last_reset = user_data.get('lastResetDate')
+        
+        # Check if it's a new day
+        if last_reset != today:
+            # Save yesterday's data to waffle
+            yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+            waffle_data = user_data.get('waffleData', {})
+            waffle_data[yesterday] = user_data.get('completedPomodoros', 0)
+            
+            # Reset daily items
+            user_data['quickWins'] = [False, False, False, False]
+            user_data['completedPomodoros'] = 0
+            user_data['cycleCount'] = 0
+            user_data['combo'] = 0
+            user_data['multiplier'] = 1.0
+            
+            # Move today's time to history and reset
+            user_data['timeData'] = {
+                'work': {'minutes': 0, 'percentage': 0},
+                'coding': {'minutes': 0, 'percentage': 0},
+                'learning': {'minutes': 0, 'percentage': 0},
+                'exercise': {'minutes': 0, 'percentage': 0},
+                'other': {'minutes': 0, 'percentage': 0}
+            }
+            
+            # Set yesterday's streaks for user to complete
+            user_data['yesterdayStreaks'] = {
+                'porn': None,
+                'routine': None,
+                'code': None
+            }
+            
+            user_data['waffleData'] = waffle_data
+            user_data['lastResetDate'] = today
+            
+            save_user_data(user_data)
+            
+            return jsonify({
+                'success': True,
+                'reset_performed': True,
+                'message': 'Daily reset completed',
+                'data': user_data
+            })
+        
+        return jsonify({
+            'success': True,
+            'reset_performed': False,
+            'data': user_data
+        })
+    
+    except Exception as e:
+        print(f"Error in daily reset: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/complete-yesterday', methods=['POST'])
+def complete_yesterday():
+    """Mark yesterday's streak as completed or failed"""
+    global user_data
+    
+    try:
+        data = request.get_json()
+        category = data.get('category')
+        completed = data.get('completed')  # True or False
+        
+        if not category:
+            return jsonify({'success': False, 'error': 'Category required'}), 400
+        
+        # Update yesterday's streak status
+        yesterday_streaks = user_data.get('yesterdayStreaks', {})
+        yesterday_streaks[category] = completed
+        user_data['yesterdayStreaks'] = yesterday_streaks
+        
+        # Update actual streak
+        if completed:
+            user_data['streaks'][category] = user_data['streaks'].get(category, 0) + 1
+        else:
+            # Failed - reset streak and lose a heart
+            user_data['streaks'][category] = 0
+            user_data['hearts'] = max(0, user_data.get('hearts', 3) - 1)
+        
+        save_user_data(user_data)
+        
+        return jsonify({
+            'success': True,
+            'data': user_data
+        })
+    
+    except Exception as e:
+        print(f"Error completing yesterday: {e}")
         return jsonify({
             'success': False,
             'error': str(e)

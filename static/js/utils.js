@@ -168,5 +168,59 @@ const Utils = {
             return `${diffHours}h ${remainingMinutes}m`;
         }
         return `${remainingMinutes}m`;
+    },
+
+    // Get today's date string (YYYY-MM-DD)
+    getTodayString: () => {
+        const now = new Date();
+        return now.toISOString().split('T')[0];
+    },
+
+    // Get yesterday's date string
+    getYesterdayString: () => {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        return yesterday.toISOString().split('T')[0];
+    },
+
+    // Check if it's a new day
+    isNewDay: (lastCheckDate) => {
+        if (!lastCheckDate) return true;
+        return Utils.getTodayString() !== lastCheckDate;
+    },
+
+    // Check if midnight has passed
+    shouldResetDaily: (lastResetDate) => {
+        return Utils.isNewDay(lastResetDate);
+    },
+
+    // Initialize daily data structure
+    initDailyData: () => {
+        return {
+            date: Utils.getTodayString(),
+            quickWinsCompleted: [false, false, false, false],
+            pomodorosCompleted: 0,
+            timeByCategory: {
+                work: 0,
+                coding: 0,
+                learning: 0,
+                exercise: 0,
+                other: 0
+            },
+            streaksCompleted: {
+                work: null,      // null = not decided, true = completed, false = failed
+                coding: null,
+                learning: null,
+                exercise: null
+            }
+        };
+    },
+
+    // Check if yesterday's streak can still be completed
+    canCompleteYesterday: (yesterdayDate) => {
+        const yesterday = new Date(yesterdayDate);
+        const now = new Date();
+        const hoursSince = (now - yesterday) / (1000 * 60 * 60);
+        return hoursSince <= CONFIG.dailyReset.streakGracePeriod;
     }
 };

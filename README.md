@@ -1,11 +1,6 @@
-# 🚀 FlowForge - Gamified Productivity Tracker (i dont  know the name)
+# 🚀 Master Dashboard - Gamified Productivity Tracker (i dont  know the name)
 
 A cyberpunk-themed productivity app that combines the Pomodoro Technique with gamification, rewards, and real-time progress tracking.
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
-![React](https://img.shields.io/badge/react-18-blue.svg)
-![Flask](https://img.shields.io/badge/flask-2.0+-green.svg)
 
 ## ✨ Features
 

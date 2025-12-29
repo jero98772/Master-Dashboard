@@ -1,8 +1,8 @@
 {
-  "fp": 308,
-  "minutes": 162,
+  "fp": 373,
+  "minutes": 202,
   "hearts": 1,
-  "privacy": false,
+  "privacy": true,
   "streaks": {
     "porn": 0,
     "routine": 0,
@@ -18,12 +18,12 @@
   ],
   "timeData": {
     "coding": {
-      "minutes": 0,
-      "percentage": 0
+      "minutes": 25,
+      "percentage": 24
     },
     "exercise": {
       "minutes": 50,
-      "percentage": 63
+      "percentage": 48
     },
     "learning": {
       "minutes": 0,
@@ -31,14 +31,17 @@
     },
     "other": {
       "minutes": 25,
-      "percentage": 32
+      "percentage": 24
     },
     "work": {
       "minutes": 4,
-      "percentage": 5
+      "percentage": 4
     }
   },
-  "last_updated": "2025-12-27T22:43:15.625496",
-  "completedPomodoros": 7,
-  "cycleCount": 1
+  "last_updated": "2025-12-28T11:09:59.989217",
+  "completedPomodoros": 8,
+  "cycleCount": 1,
+  "waffleData": {
+    "2025-12-28": 8
+  }
 }

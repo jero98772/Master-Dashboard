@@ -32,9 +32,25 @@ const CONFIG = {
 
     // Hearts System
     hearts: {
-        maxHearts: 1,           // Maximum hearts allowed
-        startingHearts: 1       // Starting hearts
+        maxHearts: 3,
+        startingHearts: 3
     },
+
+    // Daily Reset System
+    dailyReset: {
+        enabled: true,
+        resetHour: 0,  // Midnight
+        streakGracePeriod: 24,  // Hours to complete yesterday
+        livesPerMissedDay: 1  // Hearts lost when missing a day
+    },
+
+    // Streak Categories
+    streakCategories: [
+        { id: 'work', name: 'Work', emoji: '💼' },
+        { id: 'coding', name: 'Code', emoji: '💻' },
+        { id: 'learning', name: 'Learn', emoji: '📚' },
+        { id: 'exercise', name: 'Exercise', emoji: '🏃' }
+    ],
 
     // Store Prices
     store: {
