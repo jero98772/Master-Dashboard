@@ -202,6 +202,7 @@ function App() {
             exercise: { minutes: 0, percentage: 0 },
             other: { minutes: 0, percentage: 0 }
         },
+        waffleData: {},
         loading: true
     });
 
@@ -213,9 +214,38 @@ function App() {
 
     // Load data from backend on mount
     useEffect(() => {
-        loadFromBackend();
+        checkDailyResetAndLoad();
         loadHackerNews();
     }, []);
+
+    const checkDailyResetAndLoad = async () => {
+        const resetResult = await API.checkDailyReset();
+
+        if (resetResult && resetResult.success) {
+            if (resetResult.reset_performed) {
+                console.log('Daily reset performed:', resetResult.message);
+            }
+
+            setState(prev => ({
+                ...prev,
+                fp: resetResult.data.fp || 0,
+                minutes: resetResult.data.minutes || 0,
+                hearts: resetResult.data.hearts || CONFIG.hearts.startingHearts,
+                privacy: resetResult.data.privacy || false,
+                streaks: resetResult.data.streaks || { porn: 0, routine: 0, code: 0 },
+                combo: resetResult.data.combo || 0,
+                multiplier: resetResult.data.multiplier || 1.0,
+                quickWins: resetResult.data.quickWins || [false, false, false, false],
+                timeData: resetResult.data.timeData || prev.timeData,
+                completedPomodoros: resetResult.data.completedPomodoros || 0,
+                cycleCount: resetResult.data.cycleCount || 0,
+                waffleData: resetResult.data.waffleData || {},
+                loading: false
+            }));
+        } else {
+            loadFromBackend();
+        }
+    };
 
     const loadFromBackend = async () => {
         const data = await API.getUserData();
@@ -233,6 +263,7 @@ function App() {
                 timeData: data.timeData || prev.timeData,
                 completedPomodoros: data.completedPomodoros || 0,
                 cycleCount: data.cycleCount || 0,
+                waffleData: data.waffleData || {},
                 loading: false
             }));
         } else {
@@ -485,14 +516,17 @@ function App() {
                 
                 <TimeBreakdown timeData={state.timeData} />
                 
-                <ChatTerminal 
+                <ChatTerminal
                     messages={state.chatMessages}
                     input={chatInput}
                     onInputChange={setChatInput}
                     onSendCommand={sendCommand}
                 />
-                
-                <WaffleChart />
+
+                <WaffleChart
+                    waffleData={state.waffleData}
+                    completedPomodoros={state.completedPomodoros}
+                />
                 
                 <PomodoroTimer 
                     timeRemaining={state.timeRemaining}

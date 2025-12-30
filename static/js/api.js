@@ -156,5 +156,21 @@ const API = {
             console.error('Error fetching Hacker News:', error);
             return null;
         }
+    },
+
+    async checkDailyReset() {
+        try {
+            const response = await fetch(`${this.baseURL}/api/check-daily-reset`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            if (!response.ok) throw new Error('Failed to check daily reset');
+            return await response.json();
+        } catch (error) {
+            console.error('Error checking daily reset:', error);
+            return null;
+        }
     }
 };

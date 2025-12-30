@@ -102,6 +102,7 @@ const CONFIG = {
         { start: '07:55', end: '09:00', task: 'Walk', category: 'exercise' },
         { start: '09:00', end: '12:00', task: 'Work', category: 'work' },
         { start: '13:00', end: '17:00', task: 'Work', category: 'work' },
+        { start: '14:20', end: '17:00', task: 'Work', category: 'work' },
         { start: '19:00', end: '20:00', task: 'Hema', category: 'other' },
         { start: '20:00', end: '21:00', task: 'Walk', category: 'exercise' },
         { start: '21:00', end: '21:30', task: 'Take a bath', category: 'other' },

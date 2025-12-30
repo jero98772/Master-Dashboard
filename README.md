@@ -63,7 +63,7 @@ cd flowforge
 pip install flask requests
 
 # 3. Run!
-python app.py
+python main.py
 
 # 4. Open browser
 http://localhost:5000
