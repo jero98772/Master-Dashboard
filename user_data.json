@@ -1,20 +1,20 @@
 {
-  "fp": 423,
-  "minutes": 218,
+  "fp": 478,
+  "minutes": 273,
   "hearts": 1,
-  "privacy": true,
+  "privacy": false,
   "streaks": {
     "porn": 0,
     "routine": 0,
     "code": 0
   },
-  "combo": 4,
-  "multiplier": 1.5,
+  "combo": 0,
+  "multiplier": 1,
   "quickWins": [
-    true,
-    true,
-    true,
-    true
+    false,
+    false,
+    false,
+    false
   ],
   "timeData": {
     "coding": {
@@ -38,18 +38,20 @@
       "percentage": 0
     }
   },
-  "last_updated": "2025-12-30T14:51:35.914340",
+  "last_updated": "2026-01-01T10:44:38.528395",
   "completedPomodoros": 0,
   "cycleCount": 0,
   "waffleData": {
     "2025-12-28": 8,
     "2025-12-29": 8,
-    "2025-12-30": 0
+    "2025-12-30": 0,
+    "2025-12-31": 1,
+    "2026-01-01": 0
   },
   "yesterdayStreaks": {
     "porn": null,
     "routine": null,
     "code": null
   },
-  "lastResetDate": "2025-12-30"
+  "lastResetDate": "2026-01-01"
 }
