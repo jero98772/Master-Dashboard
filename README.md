@@ -1,4 +1,6 @@
-# 🚀 Master Dashboard - Gamified Productivity Tracker (i dont  know the name)
+# 🚀 Master Dashboard - Gamified Productivity Tracker 
+
+![](https://raw.githubusercontent.com/jero98772/Master-Dashboard/refs/heads/main/docs/pictures/1.png)
 
 A cyberpunk-themed productivity app that combines the Pomodoro Technique with gamification, rewards, and real-time progress tracking.
 
